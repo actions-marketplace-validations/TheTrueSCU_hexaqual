@@ -1,6 +1,6 @@
 [project]
 name = "hexaqual"
-version = "0.4.1"
+version = "0.6.0"
 description = "Universal Python quality gates, architectural boundary enforcement, and release engineering toolchain."
 readme = "README.md"
 license = "Apache-2.0"
@@ -39,7 +39,7 @@ diagrams = [
     "pydeps>=3.0.7",
 ]
 mutmut = [
-    "mutmut<3",
+    "mutmut<4",
 ]
 rope = [
     "rope>=1.14.0",
@@ -77,6 +77,9 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 asyncio_mode = "auto"
 addopts = "-ra -q --strict-markers"
+markers = [
+    "integration: End-to-end integration tests across synthetic workspaces.",
+]
 
 [tool.ruff]
 line-length = 100
@@ -136,16 +139,6 @@ type = "forbidden"
 source_modules = ["hexaqual.adapters"]
 forbidden_modules = [
     "hexaqual.infra",
-]
-
-[[tool.importlinter.contracts]]
-name = "Forbidden imports for utils"
-type = "forbidden"
-source_modules = ["hexaqual.utils"]
-forbidden_modules = [
-    "hexaqual.domain",
-    "hexaqual.ports",
-    "hexaqual.adapters",
 ]
 
 [tool.coverage.run]

@@ -8,11 +8,31 @@ Notes/Architectural Intent:
 from __future__ import annotations
 
 import difflib
+import shutil
 import subprocess
 import tomllib
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
+from hexaqual.adapters.code_analysis.pydeps import (
+    check_overview_diagram,
+    check_package_diagram,
+    generate_overview_diagram,
+    generate_package_diagram,
+)
+from hexaqual.adapters.code_analysis.usage_docs import (
+    extract_command_tree_bfs,
+    extract_subcommands_from_help,
+)
+from hexaqual.adapters.workspace import (
+    get_canonical_scripts,
+    get_package_directories,
+    get_package_directory,
+    get_present_layers,
+    get_repo_root,
+    get_workspace_scripts,
+    resolve_affected_packages,
+)
 from hexaqual.domain.generators import (
     ArchonReport,
     GenerateArchonTestsCommand,
@@ -21,25 +41,6 @@ from hexaqual.domain.generators import (
     PydepsDiagramResult,
     PydepsReport,
     UsageDocsReport,
-)
-from hexaqual.utils.help_extractor import (
-    extract_command_tree_bfs,
-    extract_subcommands_from_help,
-)
-from hexaqual.utils.import_linter import get_present_layers
-from hexaqual.utils.pydeps import (
-    check_overview_diagram,
-    check_package_diagram,
-    generate_overview_diagram,
-    generate_package_diagram,
-)
-from hexaqual.utils.workspace import (
-    get_canonical_scripts,
-    get_package_directories,
-    get_package_directory,
-    get_repo_root,
-    get_workspace_scripts,
-    resolve_affected_packages,
 )
 
 
@@ -423,6 +424,21 @@ class GeneratePydepsHandler:
 
     def _handle_check(self, command: GeneratePydepsCommand, packages: list[Path]) -> PydepsReport:
         """Execute check mode for overview and package diagrams."""
+        if shutil.which("dot") is None:
+            return PydepsReport(
+                results=(
+                    PydepsDiagramResult(
+                        name="Architecture Diagrams",
+                        path="",
+                        success=True,
+                        is_stale=False,
+                        details="Graphviz 'dot' not installed (check skipped)",
+                    ),
+                ),
+                is_successful=True,
+                is_check=True,
+            )
+
         results: list[PydepsDiagramResult] = []
         if not command.packages:
             overview_ok, overview_info = check_overview_diagram(self._root)
@@ -443,6 +459,21 @@ class GeneratePydepsHandler:
         self, command: GeneratePydepsCommand, packages: list[Path]
     ) -> PydepsReport:
         """Execute generate mode for overview and package diagrams."""
+        if shutil.which("dot") is None:
+            return PydepsReport(
+                results=(
+                    PydepsDiagramResult(
+                        name="Architecture Diagrams",
+                        path="",
+                        success=False,
+                        is_stale=False,
+                        details="Graphviz 'dot' not installed (generation aborted)",
+                    ),
+                ),
+                is_successful=False,
+                is_check=False,
+            )
+
         results: list[PydepsDiagramResult] = []
         if not command.packages:
             overview_path = generate_overview_diagram(self._root)

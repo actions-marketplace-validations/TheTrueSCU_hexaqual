@@ -45,12 +45,13 @@ Usage: hexaqual [OPTIONS] COMMAND [ARGS]...
 │ sanity      Execute the sanity check pipeline (alias for 'check').           │
 │ complexity  Audit cognitive complexity using complexipy.                     │
 │ version     Display the current Hexaqual version.                            │
+│ agents      Manage, synchronize, and verify universal .agents guardrails.    │
 │ statements  Audit and format __all__ statements.                             │
 │ parity      Audit test symmetry and optional extras parity.                  │
 │ test        Test execution, coverage audits, and architecture verification.  │
 │ deps        Audit dependencies, generate import diagrams, and check          │
 │             architectural boundaries.                                        │
-│ mutate      Mutation testing execution and triage inspection.                │
+│ mutate      Mutation testing execution and surviving mutant inspection.      │
 │ release     Distribution package building, validation, and PyPI publishing.  │
 │ gh          GitHub repository, PR, and security examination.                 │
 │ docs        Documentation generation and verification.                       │
@@ -61,6 +62,105 @@ Usage: hexaqual [OPTIONS] COMMAND [ARGS]...
 ---
 
 ## 🛠️ Complete Subcommand Tree Reference
+
+### `hexaqual agents`
+
+```text
+Usage: hexaqual agents [OPTIONS] COMMAND [ARGS]...
+
+ Manage, synchronize, and verify universal .agents guardrails.
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ sync   Synchronize universal rules, workflows, and skills to target          │
+│        repository.                                                           │
+│ check  Check whether managed .agents assets in target repository match       │
+│        hexaqual.                                                             │
+│ list   List all universal agent rules, workflows, and skills bundled in      │
+│        hexaqual.                                                             │
+╰──────────────────────────────────────────────────────────────────────────────╯
+```
+
+#### `hexaqual agents check`
+
+```text
+Usage: hexaqual agents check [OPTIONS]
+
+ Check whether managed .agents assets in target repository match hexaqual.
+
+ Args:
+     target: Optional path to the repository root or .agents directory.
+     format_type: Output presentation format.
+
+ Raises:
+     typer.Exit: If drift or missing assets are detected (exit code 1).
+
+ Notes/Architectural Intent:
+     Deterministic pre-commit and CI verification gate.
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --target  -t      <path>  Target repository root or .agents directory.       │
+│ --format  -f      <str>   Output format (table, json, markdown).             │
+│                           [default: table]                                   │
+│ --help                    Show this message and exit.                        │
+╰──────────────────────────────────────────────────────────────────────────────╯
+```
+
+#### `hexaqual agents list`
+
+```text
+Usage: hexaqual agents list [OPTIONS]
+
+ List all universal agent rules, workflows, and skills bundled in hexaqual.
+
+ Args:
+     format_type: Output presentation format.
+
+ Raises:
+     typer.Exit: If catalog rendering fails.
+
+ Notes/Architectural Intent:
+     Informational inspection command for developers and AI agents.
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --format  -f      <str>  Output format (table, json, markdown).              │
+│                          [default: table]                                    │
+│ --help                   Show this message and exit.                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+```
+
+#### `hexaqual agents sync`
+
+```text
+Usage: hexaqual agents sync [OPTIONS]
+
+ Synchronize universal rules, workflows, and skills to target repository.
+
+ Args:
+     target: Optional path to the repository root or .agents directory.
+     dry_run: Whether to simulate changes without writing to disk.
+     format_type: Output presentation format.
+
+ Raises:
+     typer.Exit: If synchronization fails.
+
+ Notes/Architectural Intent:
+     Overwrites managed assets (prefixed with hexaqual-) while strictly
+ preserving
+     unmanaged local repository rules and workflows (e.g. hexaqueue-*,
+ hexaflow-*).
+
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --target   -t      <path>  Target repository root or .agents directory.      │
+│ --dry-run                  Simulate synchronization without writing files to │
+│                            disk.                                             │
+│ --format   -f      <str>   Output format (table, json, markdown).            │
+│                            [default: table]                                  │
+│ --help                     Show this message and exit.                       │
+╰──────────────────────────────────────────────────────────────────────────────╯
+```
 
 ### `hexaqual architectural`
 
@@ -387,15 +487,22 @@ Usage: hexaqual docs links [OPTIONS]
 #### `hexaqual docs publish`
 
 ```text
-Usage: hexaqual docs publish [OPTIONS]
+Usage: hexaqual docs publish [OPTIONS] [slug]
 
  Syndicate or publish documentation articles to DEV.to / Medium.
 
  Args:
+     slug: Article slug or path to process.
      manifest: Optional path to article markdown files.
      dry_run: Validate without network writes.
      publish: Publish live articles.
+     all_drafts: Upload all unposted articles as drafts.
+     status: Show status table.
+     sync_links: Re-resolve cross-links across published articles.
+     medium_url: Record syndicated Medium URL.
+     api_key: DEV.to integration API key.
      format_type: Output presentation format.
+     root: Workspace root directory.
 
  Raises:
      typer.Exit: If publication fails.
@@ -404,15 +511,30 @@ Usage: hexaqual docs publish [OPTIONS]
      Driving adapter dispatching PublishMediumArticlesCommand across the
  governance bus.
 
+╭─ Arguments ──────────────────────────────────────────────────────────────────╮
+│   slug      <str>  Article filename stem (e.g. 'ai-guardrails-manifesto') or │
+│                    path.                                                     │
+╰──────────────────────────────────────────────────────────────────────────────╯
 ╭─ Options ────────────────────────────────────────────────────────────────────╮
-│ --manifest  -m      <path>  Path to articles manifest or directory.          │
-│ --dry-run                   Validate without making live HTTP requests.      │
-│ --publish                   Publish live articles (otherwise draft upload    │
-│                             mode).                                           │
-│ --format    -f      <str>   Output presentation format (table, json,         │
-│                             markdown, auto).                                 │
-│                             [default: table]                                 │
-│ --help                      Show this message and exit.                      │
+│ --manifest    -m      <path>  Path to articles manifest or directory.        │
+│ --dry-run                     Validate without making live HTTP requests.    │
+│ --publish                     Publish live articles (otherwise draft upload  │
+│                               mode).                                         │
+│ --all-drafts                  Upload all local articles without devto_id as  │
+│                               drafts.                                        │
+│ --status                      Show a status table of all articles and their  │
+│                               publish state.                                 │
+│ --sync-links                  Re-resolve and update cross-links on DEV.to    │
+│                               across all published articles.                 │
+│ --medium-url          <str>   Record the Medium URL for a slug after manual  │
+│                               import.                                        │
+│ --api-key             <str>   DEV.to API key (overrides DEVTO_API_KEY env    │
+│                               var).                                          │
+│ --format      -f      <str>   Output presentation format (table, json,       │
+│                               markdown, auto).                               │
+│                               [default: table]                               │
+│ --root                <path>  Workspace root directory.                      │
+│ --help                        Show this message and exit.                    │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 
@@ -631,7 +753,7 @@ Usage: hexaqual gh security [OPTIONS]
 ```text
 Usage: hexaqual mutate [OPTIONS] COMMAND [ARGS]...
 
- Mutation testing execution and triage inspection.
+ Mutation testing execution and surviving mutant inspection.
 
 ╭─ Options ────────────────────────────────────────────────────────────────────╮
 │ --help          Show this message and exit.                                  │
@@ -661,7 +783,8 @@ Usage: hexaqual mutate inspect [OPTIONS]
      typer.Exit: If inspect fails.
 
  Notes/Architectural Intent:
-     Provides high-level triage and actionable surviving mutant analysis.
+     Provides high-level triage and actionable surviving mutant analysis via
+ CQRS bus.
 
 ╭─ Options ────────────────────────────────────────────────────────────────────╮
 │ --package     -p        <str>  Filter by package.                            │
@@ -690,11 +813,11 @@ Usage: hexaqual mutate run [OPTIONS]
      typer.Exit: If mutation testing fails.
 
  Notes/Architectural Intent:
-     Executes mutmut mutation runner across targeted components.
+     Executes mutmut mutation runner across targeted components via CQRS bus.
 
 ╭─ Options ────────────────────────────────────────────────────────────────────╮
-│ --package  -p      <str>  Target package name.                               │
-│ --all      -a             Run across all workspace packages.                 │
+│ --package  -p      <str>  Target package name (e.g. core).                   │
+│ --all      -a             Run across all workspace packages sequentially.    │
 │ --reset    -r             Clear cache and re-run.                            │
 │ --help                    Show this message and exit.                        │
 ╰──────────────────────────────────────────────────────────────────────────────╯
